@@ -1,0 +1,1 @@
+from .mmlab_model_adapter import MMLabModelAdapter as MMLabModelAdapter
