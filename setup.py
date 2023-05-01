@@ -24,6 +24,11 @@ setup(
     ],
     license="MIT License",
     packages=find_packages(),  # 包
+    entry_points={
+        "console_scripts": [
+            "get_mmconfig = mmlab_lightning.tools.config.get_mmconfig:main",
+        ]
+    },
     platforms=["all"],
     classifiers=[
         "Development Status :: 5 - Production/Stable",
