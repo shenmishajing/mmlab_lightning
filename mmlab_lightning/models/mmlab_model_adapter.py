@@ -1,23 +1,19 @@
 from abc import ABC
 
 import torch
+from lightning_template.models import LightningModule
 from mmengine.model import BaseModule
 from torch import nn
-
-from lightning_template.models import LightningModule
 
 
 class MMLabModelAdapter(LightningModule, BaseModule, ABC):
     def __init__(
         self,
-        model: nn.Module,
         visualizer_kwargs=None,
         *args,
         **kwargs,
     ):
         super().__init__(*args, **kwargs)
-
-        self.model = model
 
         if visualizer_kwargs is None:
             self.visualizer_kwargs = {}
