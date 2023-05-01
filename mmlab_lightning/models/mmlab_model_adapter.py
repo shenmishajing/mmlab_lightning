@@ -7,12 +7,7 @@ from torch import nn
 
 
 class MMLabModelAdapter(LightningModule, BaseModule, ABC):
-    def __init__(
-        self,
-        visualizer_kwargs=None,
-        *args,
-        **kwargs,
-    ):
+    def __init__(self, visualizer_kwargs=None, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
         if visualizer_kwargs is None:
