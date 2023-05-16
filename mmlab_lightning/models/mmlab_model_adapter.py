@@ -56,25 +56,6 @@ class MMLabModelAdapter(LightningModule, BaseModule, ABC):
         self.log_dict(self.flatten_dict(log_vars))
         return log_vars
 
-    def predict_feature_map_forward(self, inputs, stage="backbone"):
-        feature_map_outputs = [
-            nn.functional.interpolate(
-                output.mean(dim=1, keepdim=True),
-                size=inputs.shape[2:],
-                mode="bilinear",
-            )
-            for output in self.model.extract_feat(inputs, stage=stage)
-        ]
-        feature_map_outputs = [
-            ((output - output.min()) / (output.max() - output.min(output)) * 255 + 0.5)
-            .clamp_(0, 255)
-            .permute(0, 2, 3, 1)
-            .to("cpu", torch.uint8)
-            .numpy()
-            for output in feature_map_outputs
-        ]
-        return feature_map_outputs
-
     def predict_forward(self, batch, *args, **kwargs):
         predict_result = {"predict_outputs": self(batch, mode="predict")}
 
@@ -83,7 +64,4 @@ class MMLabModelAdapter(LightningModule, BaseModule, ABC):
             batch = {"inputs": batch[0], "data_samples": batch[1]}
         predict_result.update(batch)
 
-        predict_result["feature_map_outputs"] = self.predict_feature_map_forward(
-            batch["inputs"]
-        )
         return predict_result
