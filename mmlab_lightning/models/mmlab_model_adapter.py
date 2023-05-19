@@ -1,9 +1,9 @@
 from abc import ABC
+from typing import Any, Optional
 
-import torch
 from lightning_template.models import LightningModule
+from mmengine import MessageHub
 from mmengine.model import BaseModule
-from torch import nn
 
 
 class MMLabModelAdapter(LightningModule, BaseModule, ABC):
@@ -22,6 +22,13 @@ class MMLabModelAdapter(LightningModule, BaseModule, ABC):
         self.model.data_preprocessor.to(self.device)
 
     def on_fit_start(self):
+        message_hub = MessageHub.get_current_instance()
+        message_hub.update_info(
+            "epoch", self.trainer.fit_loop.epoch_progress.current.completed
+        )
+        message_hub.update_info("iter", self.trainer.global_step)
+        message_hub.update_info("max_epochs", self.trainer.max_epochs)
+        message_hub.update_info("max_iters", self.trainer.max_steps)
         self.set_data_preprocessor_device()
         self.init_weights()
 
@@ -50,6 +57,18 @@ class MMLabModelAdapter(LightningModule, BaseModule, ABC):
         )
         self.log_dict(self.flatten_dict(log_vars, split), sync_dist=True)
         return log_vars
+
+    def on_train_epoch_start(self) -> None:
+        message_hub = MessageHub.get_current_instance()
+        message_hub.update_info(
+            "epoch", self.trainer.fit_loop.epoch_progress.current.completed
+        )
+        return super().on_train_epoch_start()
+
+    def on_train_batch_start(self, batch: Any, batch_idx: int) -> int | None:
+        message_hub = MessageHub.get_current_instance()
+        message_hub.update_info("iter", self.trainer.global_step)
+        return super().on_train_batch_start(batch, batch_idx)
 
     def training_step(self, batch, *args, **kwargs):
         _, log_vars = self.model.parse_losses(self(batch))

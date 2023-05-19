@@ -6,8 +6,8 @@ with open("README.md", "r") as f:
     long_description = f.read()
 
 setup(
-    name="mmlab_lightning",
-    version="1.0.5",
+    name="mmlab-lightning",
+    version="1.0.6",
     description="A wrapper for mmlab repos to use in project_template.",
     long_description=long_description,
     long_description_content_type="text/markdown",
