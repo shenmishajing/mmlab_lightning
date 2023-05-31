@@ -1,5 +1,5 @@
 from abc import ABC
-from typing import Any, Optional
+from typing import Any
 
 from lightning_template.models import LightningModule
 from mmengine import MessageHub
