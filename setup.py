@@ -7,7 +7,7 @@ with open("README.md", "r") as f:
 
 setup(
     name="mmlab-lightning",
-    version="1.0.7",
+    version="1.1.0",
     description="A wrapper for mmlab repos to use in project_template.",
     long_description=long_description,
     long_description_content_type="text/markdown",

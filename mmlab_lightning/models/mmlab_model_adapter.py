@@ -41,22 +41,30 @@ class MMLabModelAdapter(LightningModule, BaseModule, ABC):
     def on_predict_start(self):
         self.set_data_preprocessor_device()
 
-    def forward(self, batch, mode="loss"):
+    def forward(self, batch, *args, mode="loss", **kwargs):
         self.batch_size = len(batch["inputs"])
         batch = self.model.data_preprocessor(batch, mode != "predict")
         return self.model._run_forward(batch, mode=mode)
 
-    def forward_step(self, batch, *args, split="val", **kwargs):
-        outputs = self(batch, mode="predict")
-        self.trainer.datamodule.evaluators[split].process(outputs, batch)
-        return outputs
+    def _loss_step(self, batch, output, *args, **kwargs):
+        _, log_dict = self.model.parse_losses(output)
+        return log_dict
 
-    def on_forward_epoch_end(self, *args, split="val", **kwargs):
-        log_vars = self.trainer.datamodule.evaluators[split].evaluate(
-            len(self.trainer.datamodule.datasets[split])
+    def metric_step(self, batch, output, *args, split="val", **kwargs):
+        if self.evaluators[split]:
+            self.evaluators[split].process(output, batch)
+
+    def on_metric_epoch_end(self, *args, split="val", **kwargs):
+        return self.evaluators[split].evaluate(len(self.datasets[split]))
+
+    def forward_step(self, batch, *args, split="val", **kwargs):
+        return super().forward_step(
+            batch,
+            *args,
+            split=split,
+            mode="loss" if split == "train" else "predict",
+            **kwargs
         )
-        self.log_dict(self.flatten_dict(log_vars, split), sync_dist=True)
-        return log_vars
 
     def on_train_epoch_start(self) -> None:
         message_hub = MessageHub.get_current_instance()
@@ -69,11 +77,6 @@ class MMLabModelAdapter(LightningModule, BaseModule, ABC):
         message_hub = MessageHub.get_current_instance()
         message_hub.update_info("iter", self.trainer.global_step)
         return super().on_train_batch_start(batch, batch_idx)
-
-    def training_step(self, batch, *args, **kwargs):
-        _, log_vars = self.model.parse_losses(self(batch))
-        self.log_dict(self.flatten_dict(log_vars))
-        return log_vars
 
     def predict_forward(self, batch, *args, **kwargs):
         predict_result = {"predict_outputs": self(batch, mode="predict")}

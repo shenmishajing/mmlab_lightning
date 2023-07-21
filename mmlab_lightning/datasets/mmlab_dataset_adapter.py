@@ -1,25 +1,21 @@
 from functools import partial
 
 from lightning.pytorch.cli import instantiate_class
-from mmengine.dataset import COLLATE_FUNCTIONS
-
 from lightning_template.datasets import LightningDataModule
+from mmengine.dataset import COLLATE_FUNCTIONS
 
 
 class MMLabDataSetAdapter(LightningDataModule):
-    def __init__(self, evaluator_cfg: dict, visualizer_cfg: dict, *args, **kwargs):
+    def __init__(self, visualizer_cfg: dict, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.evaluator_cfg = self.get_split_config(evaluator_cfg)
         self.visualizer_cfg = self.get_split_config(visualizer_cfg)
 
-        self.evaluators = {}
         self.visualizers = {}
 
     def setup(self, stage=None):
         super().setup(stage)
 
         for name in self.split_names:
-            self.evaluators[name] = instantiate_class((), self.evaluator_cfg[name])
             self.visualizers[name] = instantiate_class((), self.visualizer_cfg[name])
 
             if hasattr(self.datasets[name], "metainfo"):
